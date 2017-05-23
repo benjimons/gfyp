@@ -27,7 +27,7 @@ from common import pretty_print, log #common.py
 EMAIL_USERNAME = None
 EMAIL_PASSWORD = None
 EMAIL_SMTPSERVER = "127.0.0.1"
-EMAIL_FROM = "Punch Ninja <osint@punch.ninja>"
+EMAIL_FROM = "GFYP <gfyp@example.com"
 
 def send_email(smtp_auth, recipient, subject, body):
     """Send email via SMTP.
