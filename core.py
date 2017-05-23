@@ -26,7 +26,8 @@ from common import pretty_print, log #common.py
 #SET EMAIL SETTINGS HERE IF NOT USING ENVIRONMENT VARIABLES
 EMAIL_USERNAME = None
 EMAIL_PASSWORD = None
-EMAIL_SMTPSERVER = None
+EMAIL_SMTPSERVER = "127.0.0.1"
+EMAIL_FROM = "Punch Ninja <osint@punch.ninja>"
 
 def send_email(smtp_auth, recipient, subject, body):
     """Send email via SMTP.
@@ -43,11 +44,11 @@ def send_email(smtp_auth, recipient, subject, body):
 
     #Sending message, first construct actual message
     message = ("From: %s\nTo: %s\nSubject: %s\n\n%s" %
-               (smtp_auth['username'], ", ".join(email_to), subject, body))
+               (smtp_auth['from'], ", ".join(email_to), subject, body))
     try:
-        server_ssl = smtplib.SMTP_SSL(smtp_auth['server'], 465)
+        server_ssl = smtplib.SMTP(smtp_auth['server'], 25)
         server_ssl.ehlo()
-        server_ssl.login(smtp_auth['username'], smtp_auth['password'])
+        #server_ssl.login(smtp_auth['username'], smtp_auth['password'])
         server_ssl.sendmail(smtp_auth['username'], email_to, message)
         server_ssl.close()
     except Exception, err:
@@ -98,7 +99,7 @@ def check_and_send_alert(smtp_auth, alert_email, domain, escape_alert=False,
 
     if body != "":
         recipient = alert_email
-        subject = 'GFYP - New Entries for %s' % domain
+        subject = 'Domain Squatting Detection - New Entries for %s' % domain
         if escape_alert:
             body = body.replace('.', '[.]')
         send_email(smtp_auth, recipient, subject, body)
@@ -116,20 +117,13 @@ def main():
     args = get_args()
     #Get configuration from env variables or fallback to hard-coded values
     smtp_auth = dict()
-    smtp_auth['username'] = os.getenv('GFYP_EMAIL_USERNAME', EMAIL_USERNAME)
-    smtp_auth['password'] = os.getenv('GFYP_EMAIL_PASSWORD', EMAIL_PASSWORD)
-    smtp_auth['server'] = os.getenv('GFYP_EMAIL_SMTPSERVER', EMAIL_SMTPSERVER)
+    smtp_auth['server'] = EMAIL_SMTPSERVER
+    smtp_auth['from'] = EMAIL_FROM
     for key, value in smtp_auth.iteritems():
         if value is None:
             msg = "Fatal error: Email setting '%s' has not been set." % key
             log(msg, logging.ERROR)
             sys.exit(msg)
-
-    if any([EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_SMTPSERVER]):
-        msg = ("WARNING: You have hard-coded credentials into a code file. Do "
-               "not commit it to a public Git repo!")
-        print(msg)
-        log(msg, logging.WARNING)
 
     with gfyp_db.DatabaseConnection() as db_con:
         domain_entries = db_con.get_watch_entries()
